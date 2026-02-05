@@ -7,6 +7,8 @@ tags:
 - 
 ---
 
+# Only Generation (combine code at end of file)
+
 ```Java
 // paste code here
 import java.io.*;
@@ -65,9 +67,7 @@ public class GenerateDigitalSignature {
 }
 
 ```
-##### Output:
-![[Pasted image 20250923090535.png]]
-
+# Only Verification
 
 ```Java
 // paste code here
@@ -119,5 +119,63 @@ public class VerifyDigitalSignature {
 }
 
 ```
-##### Output:
-![[Pasted image 20250922234400.png]]
+# Combine
+
+``` Java
+import java.io.*;
+import java.security.*;
+import java.security.spec.*;
+
+public class DigitalSignatureDemo {
+
+    public static void main(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Usage: java DigitalSignatureDemo <datafile>");
+            return;
+        }
+
+        try {
+            // Generate key pair
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("DSA", "SUN");
+            SecureRandom random = SecureRandom.getInstance("SHA1PRNG", "SUN");
+            keyGen.initialize(2048, random);
+            KeyPair pair = keyGen.generateKeyPair();
+            PrivateKey privateKey = pair.getPrivate();
+            PublicKey publicKey = pair.getPublic();
+
+            // Sign data
+            Signature signer = Signature.getInstance("SHA1withDSA", "SUN");
+            signer.initSign(privateKey);
+
+            FileInputStream dataIn = new FileInputStream(args[0]);
+            byte[] buffer = new byte[1024];
+            int len;
+            while ((len = dataIn.read(buffer)) != -1) {
+                signer.update(buffer, 0, len);
+            }
+            dataIn.close();
+
+            byte[] signatureBytes = signer.sign();
+
+            // Verify signature
+            Signature verifier = Signature.getInstance("SHA1withDSA", "SUN");
+            verifier.initVerify(publicKey);
+
+            FileInputStream verifyIn = new FileInputStream(args[0]);
+            while ((len = verifyIn.read(buffer)) != -1) {
+                verifier.update(buffer, 0, len);
+            }
+            verifyIn.close();
+
+            boolean isValid = verifier.verify(signatureBytes);
+
+            System.out.println("Signature generated");
+            System.out.println("Signature verification result: " + isValid);
+
+        } catch (Exception e) {
+            System.err.println(e.toString());
+        }
+    }
+}
+
+```
